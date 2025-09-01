@@ -30,15 +30,31 @@ const Signup: React.FC = () => {
 
   return (
     <div className="min-h-screen flex">
-      <div className="absolute top-6 left-6 z-10">
+      {/* Logo - Desktop */}
+      <div className="absolute top-6 left-6 z-10 hidden md:block">
         <img src="/logo.png" alt="HD Logo" className="h-8 w-16" />
       </div>
 
-      <div className="w-2/5 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+      {/* Mobile Logo */}
+      <div className="md:hidden absolute top-6 left-1/2 transform -translate-x-1/2 z-10">
+        <img src="/logo.png" alt="HD Logo" className="h-8 w-16" />
+      </div>
+
+      {/* Form Section */}
+      <div className="w-full md:w-2/5 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-sm w-full space-y-8">
-          <div className="text-left mt-16">
+          {/* Desktop Title */}
+          <div className="text-left mt-16 hidden md:block">
             <h2 className="text-3xl font-bold text-gray-900">Sign up</h2>
             <p className="mt-2 text-sm text-gray-600">
+              Sign up to enjoy the feature of HD.
+            </p>
+          </div>
+
+          {/* Mobile Title */}
+          <div className="text-center mt-20 md:hidden">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign up</h2>
+            <p className="text-sm text-gray-600">
               Sign up to enjoy the feature of HD.
             </p>
           </div>
@@ -46,9 +62,6 @@ const Signup: React.FC = () => {
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div className="relative">
-                <label htmlFor="name" className="block text-sm font-medium text-gray-500 mb-1">
-                  Your Name
-                </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <FiUser className="h-5 w-5 text-gray-400" />
@@ -59,16 +72,16 @@ const Signup: React.FC = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
+                    className="w-full pl-10 pr-3 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
                     placeholder="Jonas Khanwald"
                   />
+                  <label htmlFor="name" className="absolute -top-2 left-3 bg-white px-1 text-sm font-medium text-gray-500 peer-focus:text-blue-600">
+                    Your Name
+                  </label>
                 </div>
               </div>
 
               <div className="relative">
-                <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-500 mb-1">
-                  Date of Birth
-                </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <FiCalendar className="h-5 w-5 text-gray-400" />
@@ -79,16 +92,16 @@ const Signup: React.FC = () => {
                     name="dateOfBirth"
                     value={formData.dateOfBirth}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
+                    className="w-full pl-10 pr-3 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
                     placeholder="11 December 1997"
                   />
+                  <label htmlFor="dateOfBirth" className="absolute -top-2 left-3 bg-white px-1 text-sm font-medium text-gray-500 peer-focus:text-blue-600">
+                    Date of Birth
+                  </label>
                 </div>
               </div>
 
               <div className="relative">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-500 mb-1">
-                  Email
-                </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <FiMail className="h-5 w-5 text-gray-400" />
@@ -99,9 +112,12 @@ const Signup: React.FC = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
+                    className="w-full pl-10 pr-3 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
                     placeholder="jonas_kahnwald@gmail.com"
                   />
+                  <label htmlFor="email" className="absolute -top-2 left-3 bg-white px-1 text-sm font-medium text-gray-500 peer-focus:text-blue-600">
+                    Email
+                  </label>
                 </div>
               </div>
 
@@ -152,8 +168,9 @@ const Signup: React.FC = () => {
         </div>
       </div>
 
+      {/* Desktop Background Image */}
       <div 
-        className="hidden lg:block lg:w-3/5 relative overflow-hidden"
+        className="hidden md:block md:w-3/5 relative overflow-hidden"
         style={{
           backgroundImage: `url('/434.jpg')`,
           backgroundSize: 'cover',
