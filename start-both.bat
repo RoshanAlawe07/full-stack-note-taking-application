@@ -1,0 +1,6 @@
+@echo off
+echo Starting both servers...
+start "Backend Server" cmd /k "cd server && npm run dev"
+start "Frontend Server" cmd /k "npm start"
+echo Both servers are starting in separate windows...
+pause

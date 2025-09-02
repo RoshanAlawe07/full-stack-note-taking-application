@@ -4,6 +4,10 @@ import { Link } from 'react-router-dom';
 
 const Signin: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [otpId, setOtpId] = useState('');
+  const [showOTP, setShowOTP] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -16,9 +20,83 @@ const Signin: React.FC = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleGetOTP = async () => {
+    if (!formData.email) {
+      setMessage('Please enter your email');
+      return;
+    }
+
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const response = await fetch('http://localhost:5000/api/signin-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setOtpId(data.otpId);
+        setShowOTP(true);
+        setMessage('OTP sent to your email! Please check your inbox.');
+      } else {
+        setMessage(data.message || 'Failed to send OTP');
+      }
+    } catch (error) {
+      setMessage('Network error. Please try again.');
+      console.error('Error sending OTP:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Sign in form submitted:', formData);
+    
+    if (!formData.password) {
+      setMessage('Please enter the OTP');
+      return;
+    }
+
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const response = await fetch('http://localhost:5000/api/verify-signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          otpId: otpId,
+          otp: formData.password
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage('Sign in successful! Welcome back.');
+        // Reset form
+        setFormData({ email: '', password: '' });
+        setShowOTP(false);
+        setOtpId('');
+      } else {
+        setMessage(data.message || 'Invalid OTP');
+      }
+    } catch (error) {
+      setMessage('Network error. Please try again.');
+      console.error('Error verifying OTP:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -74,38 +152,46 @@ const Signin: React.FC = () => {
                 </div>
               </div>
 
-              <div className="relative">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-500 mb-1">
-                  OTP
-                </label>
+              {showOTP && (
                 <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
-                    placeholder="OTP"
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <FiEyeOff /> : <FiEye />}
-                  </button>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-500 mb-1">
+                    OTP
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      id="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
+                      placeholder="Enter OTP"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <FiEyeOff /> : <FiEye />}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Mobile-specific elements */}
             <div className="md:hidden space-y-4">
-              <div className="text-left">
-                <Link to="#" className="text-sm text-blue-600 hover:text-blue-500 transition-colors duration-200">
-                  Resend OTP
-                </Link>
-              </div>
+              {showOTP && (
+                <div className="text-left">
+                  <button 
+                    type="button"
+                    onClick={handleGetOTP}
+                    className="text-sm text-blue-600 hover:text-blue-500 transition-colors duration-200"
+                  >
+                    Resend OTP
+                  </button>
+                </div>
+              )}
               
               <div className="flex items-center">
                 <input
@@ -119,11 +205,31 @@ const Signin: React.FC = () => {
               </div>
             </div>
 
+            {/* Message Display */}
+            {message && (
+              <div className={`text-center text-sm p-3 rounded-lg ${
+                message.includes('success') || message.includes('sent') 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-red-100 text-red-700'
+              }`}>
+                {message}
+              </div>
+            )}
+
             <button
-              type="submit"
-              className="w-full flex justify-center items-center px-4 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+              type="button"
+              onClick={showOTP ? handleSubmit : handleGetOTP}
+              disabled={loading}
+              className="w-full flex justify-center items-center px-4 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign in
+              {loading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  {showOTP ? 'Verifying...' : 'Sending OTP...'}
+                </div>
+              ) : (
+                showOTP ? 'Sign in' : 'Get OTP'
+              )}
             </button>
 
             <div className="text-center">

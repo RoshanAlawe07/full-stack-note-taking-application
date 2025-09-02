@@ -5,6 +5,9 @@ import { Link } from 'react-router-dom';
 const Signup: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [otpId, setOtpId] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     dateOfBirth: '',
@@ -19,13 +22,86 @@ const Signup: React.FC = () => {
     });
   };
 
-  const handleGetOTP = () => {
-    setShowOTP(true);
+  const handleGetOTP = async () => {
+    // Validate required fields
+    if (!formData.name || !formData.email) {
+      setMessage('Please fill in your name and email');
+      return;
+    }
+
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const response = await fetch('http://localhost:5000/api/send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          dateOfBirth: formData.dateOfBirth
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setOtpId(data.otpId);
+        setShowOTP(true);
+        setMessage('OTP sent to your email! Please check your inbox.');
+      } else {
+        setMessage(data.message || 'Failed to send OTP');
+      }
+    } catch (error) {
+      setMessage('Network error. Please try again.');
+      console.error('Error sending OTP:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    
+    if (!formData.otp) {
+      setMessage('Please enter the OTP');
+      return;
+    }
+
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const response = await fetch('http://localhost:5000/api/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          otpId: otpId,
+          otp: formData.otp
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage('Account created successfully! You can now sign in.');
+        // Reset form
+        setFormData({ name: '', dateOfBirth: '', email: '', otp: '' });
+        setShowOTP(false);
+        setOtpId('');
+      } else {
+        setMessage(data.message || 'Invalid OTP');
+      }
+    } catch (error) {
+      setMessage('Network error. Please try again.');
+      console.error('Error verifying OTP:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -148,12 +224,31 @@ const Signup: React.FC = () => {
               )}
             </div>
 
+            {/* Message Display */}
+            {message && (
+              <div className={`text-center text-sm p-3 rounded-lg ${
+                message.includes('success') || message.includes('sent') 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-red-100 text-red-700'
+              }`}>
+                {message}
+              </div>
+            )}
+
             <button
               type="button"
-              onClick={handleGetOTP}
-              className="w-full flex justify-center items-center px-4 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+              onClick={showOTP ? handleSubmit : handleGetOTP}
+              disabled={loading}
+              className="w-full flex justify-center items-center px-4 py-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {showOTP ? 'Sign up' : 'Get OTP'}
+              {loading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  {showOTP ? 'Verifying...' : 'Sending OTP...'}
+                </div>
+              ) : (
+                showOTP ? 'Sign up' : 'Get OTP'
+              )}
             </button>
 
             <div className="text-center">
