@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_ENDPOINTS } from '../config';
 
 interface SigninProps {
   setCurrentPage: (page: string) => void;
@@ -32,7 +33,7 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
     setMessage('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/signin-otp', {
+      const response = await fetch('API_ENDPOINTS.SIGNIN_OTP', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +72,7 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
     setMessage('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/verify-signin', {
+      const response = await fetch('API_ENDPOINTS.VERIFY_SIGNIN', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Signup from './pages/signup.tsx';
 import Signin from './pages/signin.tsx';
+import { API_ENDPOINTS } from './config';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('signup');
@@ -38,7 +39,7 @@ const App = () => {
     const loadNotes = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/api/notes', {
+        const response = await fetch('API_ENDPOINTS.NOTES', {
           method: 'GET',
           headers: { 
             'Content-Type': 'application/json',
@@ -65,7 +66,7 @@ const App = () => {
         setLoading(true);
         try {
           const token = localStorage.getItem('token');
-          const response = await fetch('http://localhost:5000/api/notes', {
+          const response = await fetch('API_ENDPOINTS.NOTES', {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
@@ -109,7 +110,7 @@ const App = () => {
         setLoading(true);
         try {
           const token = localStorage.getItem('token');
-          const response = await fetch(`http://localhost:5000/api/notes/${editingNote.id}`, {
+          const response = await fetch(`API_ENDPOINTS.NOTES/${editingNote.id}`, {
             method: 'PUT',
             headers: { 
               'Content-Type': 'application/json',
@@ -147,7 +148,7 @@ const App = () => {
     const handleDeleteNote = async (id) => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/notes/${id}`, {
+        const response = await fetch(`API_ENDPOINTS.NOTES/${id}`, {
           method: 'DELETE',
           headers: { 
             'Content-Type': 'application/json',
