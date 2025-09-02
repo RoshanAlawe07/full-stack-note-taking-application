@@ -12,7 +12,7 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
   const [showOTP, setShowOTP] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    otp: ''
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,7 +62,7 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.password) {
+    if (!formData.otp) {
       setMessage('Please enter the OTP');
       return;
     }
@@ -78,19 +78,22 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
         },
         body: JSON.stringify({
           otpId: otpId,
-          otp: formData.password
+          otp: formData.otp
         }),
       });
 
       const data = await response.json();
+      console.log('Signin response:', data);
+      console.log('Response status:', response.status);
 
       if (data.success) {
         setMessage('Sign in successful! Redirecting to dashboard...');
-        // Store user data in localStorage
+        // Store JWT token and user data in localStorage
+        localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         setUserData(data.user);
         // Reset form
-        setFormData({ email: '', password: '' });
+        setFormData({ email: '', otp: '' });
         setShowOTP(false);
         setOtpId('');
         // Redirect to dashboard after 2 seconds
@@ -99,6 +102,7 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
           setMessage('');
         }, 2000);
       } else {
+        console.log('Signin failed:', data);
         setMessage(data.message || 'Invalid OTP');
       }
     } catch (error) {
@@ -166,8 +170,8 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
                     <input
                       type="text"
                       id="password"
-                      name="password"
-                      value={formData.password}
+                      name="otp"
+                      value={formData.otp}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
                       placeholder="Enter OTP"

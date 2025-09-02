@@ -88,10 +88,13 @@ const Signup: React.FC<SignupProps> = ({ setCurrentPage, setUserData }) => {
       });
 
       const data = await response.json();
+      console.log('Signup response:', data);
+      console.log('Response status:', response.status);
 
       if (data.success) {
         setMessage('Account created successfully! Welcome to HD!');
-        // Store user data in localStorage
+        // Store JWT token and user data in localStorage
+        localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         setUserData(data.user);
         // Reset form

@@ -6,6 +6,24 @@ const App = () => {
   const [currentPage, setCurrentPage] = useState('signup');
   const [userData, setUserData] = useState(null);
 
+  // Check for existing authentication on app load
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    
+    if (token && storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        setUserData(user);
+        setCurrentPage('dashboard');
+      } catch (error) {
+        // Invalid stored data, clear it
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+    }
+  }, []);
+
   const Dashboard = () => {
     const [notes, setNotes] = useState([]);
     const [showAddNote, setShowAddNote] = useState(false);
@@ -19,13 +37,23 @@ const App = () => {
 
     const loadNotes = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/notes/${userData?.email}`, {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/notes', {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
         });
         const data = await response.json();
         if (data.success) {
           setNotes(data.notes || []);
+        } else if (response.status === 401 || response.status === 403) {
+          // Token expired or invalid, redirect to signin
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setCurrentPage('signin');
+          setUserData(null);
         }
       } catch (error) {
         console.error('Error loading notes:', error);
@@ -36,11 +64,14 @@ const App = () => {
       if (newNote.title.trim() && newNote.content.trim()) {
         setLoading(true);
         try {
+          const token = localStorage.getItem('token');
           const response = await fetch('http://localhost:5000/api/notes', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({
-              email: userData?.email,
               title: newNote.title,
               content: newNote.content
             }),
@@ -50,6 +81,11 @@ const App = () => {
             setNotes([...notes, data.note]);
             setNewNote({ title: '', content: '' });
             setShowAddNote(false);
+          } else if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setCurrentPage('signin');
+            setUserData(null);
           }
         } catch (error) {
           console.error('Error adding note:', error);
@@ -72,9 +108,13 @@ const App = () => {
       if (editingNote && newNote.title.trim() && newNote.content.trim()) {
         setLoading(true);
         try {
+          const token = localStorage.getItem('token');
           const response = await fetch(`http://localhost:5000/api/notes/${editingNote.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({
               title: newNote.title,
               content: newNote.content
@@ -90,6 +130,11 @@ const App = () => {
             setNewNote({ title: '', content: '' });
             setEditingNote(null);
             setShowAddNote(false);
+          } else if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setCurrentPage('signin');
+            setUserData(null);
           }
         } catch (error) {
           console.error('Error updating note:', error);
@@ -101,9 +146,13 @@ const App = () => {
 
     const handleDeleteNote = async (id) => {
       try {
+        const token = localStorage.getItem('token');
         const response = await fetch(`http://localhost:5000/api/notes/${id}`, {
           method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
         });
         const data = await response.json();
         if (data.success) {
@@ -112,6 +161,11 @@ const App = () => {
             setEditingNote(null);
             setShowAddNote(false);
           }
+        } else if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setCurrentPage('signin');
+          setUserData(null);
         }
       } catch (error) {
         console.error('Error deleting note:', error);
@@ -119,6 +173,7 @@ const App = () => {
     };
 
     const handleSignOut = () => {
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       setCurrentPage('signin');
       setUserData(null);

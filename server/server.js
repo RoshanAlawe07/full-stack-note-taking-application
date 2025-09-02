@@ -3,18 +3,45 @@ const cors = require('cors');
 const nodemailer = require('nodemailer');
 const { v4: uuidv4 } = require('uuid');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-app', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected successfully'))
-.catch(err => console.error('MongoDB connection error:', err));
+// Debug: Check if JWT_SECRET is loaded
+console.log('JWT_SECRET loaded:', !!process.env.JWT_SECRET);
+console.log('JWT_SECRET length:', process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0);
+
+// Ensure JWT_SECRET is available
+if (!process.env.JWT_SECRET) {
+  console.log('JWT_SECRET not found in environment, using fallback');
+  process.env.JWT_SECRET = 'fallback-jwt-secret-for-development-only';
+}
+
+// MongoDB Connection with better error handling
+const connectDB = async () => {
+  try {
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-app';
+    console.log('Attempting to connect to MongoDB...');
+    console.log('Connection string:', mongoURI.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
+    
+    await mongoose.connect(mongoURI, {
+      serverSelectionTimeoutMS: 5000 // Timeout after 5s instead of 30s
+    });
+    
+    console.log('✅ MongoDB connected successfully');
+  } catch (err) {
+    console.error('❌ MongoDB connection error:', err.message);
+    console.error('Please check:');
+    console.error('1. MongoDB is installed and running');
+    console.error('2. Connection string in .env file is correct');
+    console.error('3. Network connectivity');
+    process.exit(1); // Exit the process if DB connection fails
+  }
+};
+
+// Database connection will be handled in startServer()
 
 // Middleware
 app.use(cors());
@@ -26,6 +53,30 @@ const Note = require('./models/Note');
 
 // Store OTPs temporarily (in production, use Redis or database)
 const otpStore = new Map();
+
+// JWT Authentication Middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).json({ 
+      success: false,
+      message: 'Access denied. No token provided.' 
+    });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Invalid or expired token.' 
+      });
+    }
+    req.user = user;
+    next();
+  });
+};
 
 // Email transporter configuration
 const transporter = nodemailer.createTransport({
@@ -179,9 +230,34 @@ app.post('/api/verify-otp', async (req, res) => {
 
       await user.save();
 
+      // Generate JWT token
+      console.log('Generating JWT token for new user:', user.email);
+      console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+      
+      let token;
+      try {
+        token = jwt.sign(
+          { 
+            userId: user._id, 
+            email: user.email 
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+        console.log('JWT token generated successfully for signup');
+      } catch (jwtError) {
+        console.error('JWT token generation failed:', jwtError);
+        console.error('JWT_SECRET at time of error:', !!process.env.JWT_SECRET);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to generate authentication token: ' + jwtError.message
+        });
+      }
+
       res.json({
         success: true,
         message: 'Account created successfully!',
+        token: token,
         user: {
           _id: user._id,
           name: user.name,
@@ -230,13 +306,16 @@ app.post('/api/signin-otp', async (req, res) => {
     const otpId = uuidv4();
 
     // Store OTP with expiration (10 minutes)
-    otpStore.set(otpId, {
+    const otpData = {
       otp,
       email,
       type: 'signin',
       createdAt: Date.now(),
       expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
-    });
+    };
+    otpStore.set(otpId, otpData);
+    console.log('OTP stored for signin:', { otpId, email, otp, type: 'signin' });
+    console.log('Total OTPs in store:', otpStore.size);
 
     // Send OTP email
     const emailSent = await sendOTPEmail(email, otp, 'User');
@@ -266,8 +345,10 @@ app.post('/api/signin-otp', async (req, res) => {
 app.post('/api/verify-signin', async (req, res) => {
   try {
     const { otpId, otp } = req.body;
+    console.log('Verify signin request:', { otpId, otp });
 
     if (!otpId || !otp) {
+      console.log('Missing OTP ID or OTP');
       return res.status(400).json({
         success: false,
         message: 'OTP ID and OTP are required'
@@ -276,11 +357,22 @@ app.post('/api/verify-signin', async (req, res) => {
 
     // Get stored OTP data
     const otpData = otpStore.get(otpId);
+    console.log('Stored OTP data:', otpData);
+    console.log('All stored OTPs:', Array.from(otpStore.entries()));
 
-    if (!otpData || otpData.type !== 'signin') {
+    if (!otpData) {
+      console.log('No OTP data found for ID:', otpId);
       return res.status(400).json({
         success: false,
-        message: 'Invalid or expired OTP'
+        message: 'OTP not found. Please request a new OTP.'
+      });
+    }
+
+    if (otpData.type !== 'signin') {
+      console.log('Wrong OTP type:', otpData.type, 'expected: signin');
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid OTP type'
       });
     }
 
@@ -315,9 +407,34 @@ app.post('/api/verify-signin', async (req, res) => {
         });
       }
 
+      // Generate JWT token
+      console.log('Generating JWT token for user:', user.email);
+      console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+      
+      let token;
+      try {
+        token = jwt.sign(
+          { 
+            userId: user._id, 
+            email: user.email 
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+        console.log('JWT token generated successfully');
+      } catch (jwtError) {
+        console.error('JWT token generation failed:', jwtError);
+        console.error('JWT_SECRET at time of error:', !!process.env.JWT_SECRET);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to generate authentication token: ' + jwtError.message
+        });
+      }
+
       res.json({
         success: true,
         message: 'Sign in successful!',
+        token: token,
         user: {
           _id: user._id,
           name: user.name,
@@ -355,20 +472,9 @@ setInterval(() => {
 // Note Management Endpoints
 
 // Get all notes for a user
-app.get('/api/notes/:email', async (req, res) => {
+app.get('/api/notes', authenticateToken, async (req, res) => {
   try {
-    const { email } = req.params;
-    
-    // Find user by email first
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-    
-    const notes = await Note.find({ userId: user._id }).sort({ createdAt: -1 });
+    const notes = await Note.find({ userId: req.user.userId }).sort({ createdAt: -1 });
     
     res.json({
       success: true,
@@ -384,30 +490,21 @@ app.get('/api/notes/:email', async (req, res) => {
 });
 
 // Create a new note
-app.post('/api/notes', async (req, res) => {
+app.post('/api/notes', authenticateToken, async (req, res) => {
   try {
-    const { title, content, email } = req.body;
+    const { title, content } = req.body;
     
-    if (!title || !content || !email) {
+    if (!title || !content) {
       return res.status(400).json({
         success: false,
-        message: 'Title, content, and email are required'
-      });
-    }
-    
-    // Find user by email first
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
+        message: 'Title and content are required'
       });
     }
     
     const note = new Note({
       title,
       content,
-      userId: user._id
+      userId: req.user.userId
     });
     
     await note.save();
@@ -427,7 +524,7 @@ app.post('/api/notes', async (req, res) => {
 });
 
 // Update a note
-app.put('/api/notes/:noteId', async (req, res) => {
+app.put('/api/notes/:noteId', authenticateToken, async (req, res) => {
   try {
     const { noteId } = req.params;
     const { title, content } = req.body;
@@ -439,23 +536,26 @@ app.put('/api/notes/:noteId', async (req, res) => {
       });
     }
     
-    const note = await Note.findByIdAndUpdate(
+    // Check if note belongs to the authenticated user
+    const note = await Note.findOne({ _id: noteId, userId: req.user.userId });
+    
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: 'Note not found or access denied'
+      });
+    }
+    
+    const updatedNote = await Note.findByIdAndUpdate(
       noteId,
       { title, content, updatedAt: Date.now() },
       { new: true }
     );
     
-    if (!note) {
-      return res.status(404).json({
-        success: false,
-        message: 'Note not found'
-      });
-    }
-    
     res.json({
       success: true,
       message: 'Note updated successfully',
-      note: note
+      note: updatedNote
     });
   } catch (error) {
     console.error('Error updating note:', error);
@@ -467,18 +567,21 @@ app.put('/api/notes/:noteId', async (req, res) => {
 });
 
 // Delete a note
-app.delete('/api/notes/:noteId', async (req, res) => {
+app.delete('/api/notes/:noteId', authenticateToken, async (req, res) => {
   try {
     const { noteId } = req.params;
     
-    const note = await Note.findByIdAndDelete(noteId);
+    // Check if note belongs to the authenticated user
+    const note = await Note.findOne({ _id: noteId, userId: req.user.userId });
     
     if (!note) {
       return res.status(404).json({
         success: false,
-        message: 'Note not found'
+        message: 'Note not found or access denied'
       });
     }
+    
+    await Note.findByIdAndDelete(noteId);
     
     res.json({
       success: true,
@@ -498,7 +601,18 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'Server is running!' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/api/health`);
-});
+// Start server only after database connection
+const startServer = async () => {
+  try {
+    await connectDB(); // Ensure DB connection before starting server
+    app.listen(PORT, () => {
+      console.log(`🚀 Server is running on port ${PORT}`);
+      console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
