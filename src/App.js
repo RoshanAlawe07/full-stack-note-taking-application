@@ -2,16 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Signup from './pages/signup.tsx';
 import Signin from './pages/signin.tsx';
 
-// Main App component with navigation between signup, signin, and dashboard
 const App = () => {
-  const [currentPage, setCurrentPage] = useState('signup'); // 'signup', 'signin', 'dashboard'
+  const [currentPage, setCurrentPage] = useState('signup');
   const [userData, setUserData] = useState(null);
 
-
-
-
-
-  // Dashboard component
   const Dashboard = () => {
     const [notes, setNotes] = useState([]);
     const [showAddNote, setShowAddNote] = useState(false);
@@ -19,7 +13,6 @@ const App = () => {
     const [editingNote, setEditingNote] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    // Load notes from backend when component mounts
     useEffect(() => {
       loadNotes();
     }, []);
@@ -28,9 +21,7 @@ const App = () => {
       try {
         const response = await fetch(`http://localhost:5000/api/notes/${userData?.email}`, {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         });
         const data = await response.json();
         if (data.success) {
@@ -47,9 +38,7 @@ const App = () => {
         try {
           const response = await fetch('http://localhost:5000/api/notes', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: userData?.email,
               title: newNote.title,
@@ -85,9 +74,7 @@ const App = () => {
         try {
           const response = await fetch(`http://localhost:5000/api/notes/${editingNote.id}`, {
             method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               title: newNote.title,
               content: newNote.content
@@ -116,9 +103,7 @@ const App = () => {
       try {
         const response = await fetch(`http://localhost:5000/api/notes/${id}`, {
           method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         });
         const data = await response.json();
         if (data.success) {
@@ -139,42 +124,31 @@ const App = () => {
       setUserData(null);
     };
 
-  return (
+    return (
       <div className="min-h-screen bg-gray-50">
-        {/* Mobile Layout */}
         <div className="md:hidden">
-          {/* Header */}
           <div className="bg-white shadow-sm border-b">
             <div className="flex items-center justify-between p-4">
               <div className="flex items-center">
                 <div className="h-8 w-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold">HD</div>
               </div>
               <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-              <button
-                onClick={handleSignOut}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
+              <button onClick={handleSignOut} className="text-blue-600 hover:text-blue-800 text-sm font-medium">
                 Sign Out
               </button>
             </div>
           </div>
 
-          {/* User Info Card */}
           <div className="px-4 mb-6 mt-4">
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Welcome, {userData?.name}!</h2>
               <div className="space-y-3">
-                <div>
-                  <p className="text-gray-900">{userData?.dateOfBirth}</p>
-                </div>
-                <div>
-                  <p className="text-gray-900">Email: {userData?.email}</p>
-                </div>
+                <div><p className="text-gray-900">{userData?.dateOfBirth}</p></div>
+                <div><p className="text-gray-900">Email: {userData?.email}</p></div>
               </div>
             </div>
           </div>
 
-          {/* Create Note Button */}
           <div className="px-4 mb-4">
             <button
               onClick={() => setShowAddNote(true)}
@@ -185,7 +159,6 @@ const App = () => {
             </button>
           </div>
 
-          {/* Add/Edit Note Form */}
           {showAddNote && (
             <div className="px-4 mb-6">
               <div className="bg-white rounded-lg shadow-sm border p-6">
@@ -236,7 +209,6 @@ const App = () => {
             </div>
           )}
 
-          {/* Notes List */}
           <div className="px-4 pb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Notes</h2>
             <div className="space-y-4">
@@ -244,10 +216,7 @@ const App = () => {
                 <div key={note.id} className="bg-white rounded-lg shadow-sm border p-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-900">{note.title}</h3>
-                    <button
-                      onClick={() => handleDeleteNote(note.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
+                    <button onClick={() => handleDeleteNote(note.id)} className="text-red-600 hover:text-red-800">
                       <span className="text-xl">🗑️</span>
                     </button>
                   </div>
@@ -259,9 +228,7 @@ const App = () => {
           </div>
         </div>
 
-        {/* Desktop Layout */}
         <div className="hidden md:block">
-          {/* Header */}
           <div className="bg-white shadow-sm border-b">
             <div className="flex items-center justify-between px-6 py-4">
               <div className="flex items-center space-x-2">
@@ -269,10 +236,7 @@ const App = () => {
               </div>
               <div className="flex items-center space-x-6">
                 <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                <button
-                  onClick={handleSignOut}
-                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
-                >
+                <button onClick={handleSignOut} className="flex items-center space-x-2 text-gray-600 hover:text-gray-800">
                   <span className="text-xl">🚪</span>
                   <span>Sign out</span>
                 </button>
@@ -280,11 +244,8 @@ const App = () => {
             </div>
           </div>
 
-          {/* Main Content */}
           <div className="flex">
-            {/* Sidebar */}
             <div className="w-1/3 bg-white shadow-sm min-h-screen p-6">
-              {/* User Info */}
               <div className="mb-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">User Information</h2>
                 <div className="space-y-4">
@@ -303,7 +264,6 @@ const App = () => {
                 </div>
               </div>
 
-              {/* Add Note Button */}
               <button
                 onClick={() => setShowAddNote(true)}
                 className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg flex items-center justify-center space-x-2 hover:bg-blue-700 transition-colors"
@@ -313,9 +273,7 @@ const App = () => {
               </button>
             </div>
 
-            {/* Main Content Area */}
             <div className="flex-1 p-6">
-              {/* Add/Edit Note Form */}
               {showAddNote && (
                 <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-4">
@@ -364,7 +322,6 @@ const App = () => {
                 </div>
               )}
 
-              {/* Notes List */}
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Notes</h2>
                 <div className="grid gap-4">
@@ -373,16 +330,10 @@ const App = () => {
                       <div className="flex items-start justify-between mb-3">
                         <h3 className="text-xl font-semibold text-gray-900">{note.title}</h3>
                         <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleEditNote(note.id)}
-                            className="text-blue-600 hover:text-blue-800 p-1"
-                          >
+                          <button onClick={() => handleEditNote(note.id)} className="text-blue-600 hover:text-blue-800 p-1">
                             <span className="text-xl">✏️</span>
                           </button>
-                          <button
-                            onClick={() => handleDeleteNote(note.id)}
-                            className="text-red-600 hover:text-red-800 p-1"
-                          >
+                          <button onClick={() => handleDeleteNote(note.id)} className="text-red-600 hover:text-red-800 p-1">
                             <span className="text-xl">🗑️</span>
                           </button>
                         </div>
@@ -400,7 +351,6 @@ const App = () => {
     );
   };
 
-  // Main App Navigation
   if (currentPage === 'signin') {
     return <Signin setCurrentPage={setCurrentPage} setUserData={setUserData} />;
   }
@@ -409,7 +359,6 @@ const App = () => {
     return <Dashboard />;
   }
 
-  // Default to signup page
   return <Signup setCurrentPage={setCurrentPage} setUserData={setUserData} />;
 };
 
