@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiTrash2, FiLogOut, FiEdit3 } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
-import topLogo from '../assets/top.png';
+// import topLogo from '../assets/top.png';
 
 interface Note {
   id: string;
@@ -97,7 +97,7 @@ const Dashboard: React.FC = () => {
         <div className="bg-white shadow-sm border-b">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center">
-              <img src={topLogo} alt="Logo" className="h-8 w-8" />
+              <div className="h-8 w-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold">HD</div>
             </div>
             <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
             <button

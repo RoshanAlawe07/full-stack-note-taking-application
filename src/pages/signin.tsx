@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { FiEye, FiEyeOff, FiMail, FiLock } from 'react-icons/fi';
-import { Link, useNavigate } from 'react-router-dom';
 
-const Signin: React.FC = () => {
-  const [showPassword, setShowPassword] = useState(false);
+interface SigninProps {
+  setCurrentPage: (page: string) => void;
+  setUserData: (user: any) => void;
+}
+
+const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [otpId, setOtpId] = useState('');
   const [showOTP, setShowOTP] = useState(false);
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -87,13 +88,15 @@ const Signin: React.FC = () => {
         setMessage('Sign in successful! Redirecting to dashboard...');
         // Store user data in localStorage
         localStorage.setItem('user', JSON.stringify(data.user));
+        setUserData(data.user);
         // Reset form
         setFormData({ email: '', password: '' });
         setShowOTP(false);
         setOtpId('');
         // Redirect to dashboard after 2 seconds
         setTimeout(() => {
-          navigate('/dashboard');
+          setCurrentPage('dashboard');
+          setMessage('');
         }, 2000);
       } else {
         setMessage(data.message || 'Invalid OTP');
@@ -113,10 +116,7 @@ const Signin: React.FC = () => {
         <img src="/logo.png" alt="HD Logo" className="h-8 w-16" />
       </div>
 
-      {/* Mobile Logo */}
-      <div className="md:hidden absolute top-6 left-1/2 transform -translate-x-1/2 z-10">
-        <img src="/logo.png" alt="HD Logo" className="h-8 w-16" />
-      </div>
+
 
       {/* Form Section */}
       <div className="w-full md:w-2/5 flex items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -130,7 +130,8 @@ const Signin: React.FC = () => {
           </div>
 
           {/* Mobile Title */}
-          <div className="text-center mt-20 md:hidden">
+          <div className="text-center mt-8 md:hidden">
+            <img src="/logo.png" alt="HD Logo" className="h-8 w-16 mx-auto mb-4" />
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign in</h2>
             <p className="text-sm text-gray-600">
               Please login to continue to your account.
@@ -141,16 +142,13 @@ const Signin: React.FC = () => {
             <div className="space-y-4">
               <div className="relative">
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiMail className="h-5 w-5 text-gray-400" />
-                  </div>
                   <input
                     type="email"
                     id="email"
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-3 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
                     placeholder="jonas_kahnwald@gmail.com"
                   />
                   <label htmlFor="email" className="absolute -top-2 left-3 bg-white px-1 text-sm font-medium text-gray-500 peer-focus:text-blue-600">
@@ -166,7 +164,7 @@ const Signin: React.FC = () => {
                   </label>
                   <div className="relative">
                     <input
-                      type={showPassword ? "text" : "password"}
+                      type="text"
                       id="password"
                       name="password"
                       value={formData.password}
@@ -174,12 +172,14 @@ const Signin: React.FC = () => {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
                       placeholder="Enter OTP"
                     />
-                    <button
+                  </div>
+                  <div className="mt-2 text-right">
+                    <button 
                       type="button"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={handleGetOTP}
+                      className="text-sm text-blue-600 hover:text-blue-500 transition-colors duration-200"
                     >
-                      {showPassword ? <FiEyeOff /> : <FiEye />}
+                      Resend OTP
                     </button>
                   </div>
                 </div>
@@ -241,10 +241,13 @@ const Signin: React.FC = () => {
 
             <div className="text-center">
               <p className="text-sm text-gray-600">
-                Need an account??{' '}
-                <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200">
+                Need an account?{' '}
+                <span 
+                  className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200 cursor-pointer"
+                  onClick={() => setCurrentPage('signup')}
+                >
                   Create one
-                </Link>
+                </span>
               </p>
             </div>
           </form>

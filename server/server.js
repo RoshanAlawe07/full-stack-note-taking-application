@@ -2,14 +2,27 @@ const express = require('express');
 const cors = require('cors');
 const nodemailer = require('nodemailer');
 const { v4: uuidv4 } = require('uuid');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// MongoDB Connection
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-app', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('MongoDB connected successfully'))
+.catch(err => console.error('MongoDB connection error:', err));
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Import models
+const User = require('./models/User');
+const Note = require('./models/Note');
 
 // Store OTPs temporarily (in production, use Redis or database)
 const otpStore = new Map();
@@ -156,17 +169,40 @@ app.post('/api/verify-otp', async (req, res) => {
     // OTP is valid - remove from store
     otpStore.delete(otpId);
 
-    // Here you would typically save user to database
-    // For now, we'll just return success
-    res.json({
-      success: true,
-      message: 'Account created successfully!',
-      user: {
+    // Save user to database
+    try {
+      const user = new User({
         name: otpData.name,
         email: otpData.email,
         dateOfBirth: otpData.dateOfBirth
+      });
+
+      await user.save();
+
+      res.json({
+        success: true,
+        message: 'Account created successfully!',
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          dateOfBirth: user.dateOfBirth
+        }
+      });
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      if (dbError.code === 11000) {
+        res.status(400).json({
+          success: false,
+          message: 'User with this email already exists'
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: 'Failed to create account'
+        });
       }
-    });
+    }
 
   } catch (error) {
     console.error('Error in verify-otp:', error);
@@ -268,13 +304,34 @@ app.post('/api/verify-signin', async (req, res) => {
     // OTP is valid - remove from store
     otpStore.delete(otpId);
 
-    res.json({
-      success: true,
-      message: 'Sign in successful!',
-      user: {
-        email: otpData.email
+    // Find user in database
+    try {
+      const user = await User.findOne({ email: otpData.email });
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found. Please sign up first.'
+        });
       }
-    });
+
+      res.json({
+        success: true,
+        message: 'Sign in successful!',
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          dateOfBirth: user.dateOfBirth
+        }
+      });
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to sign in'
+      });
+    }
 
   } catch (error) {
     console.error('Error in verify-signin:', error);
@@ -294,6 +351,147 @@ setInterval(() => {
     }
   }
 }, 5 * 60 * 1000);
+
+// Note Management Endpoints
+
+// Get all notes for a user
+app.get('/api/notes/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    
+    // Find user by email first
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    const notes = await Note.find({ userId: user._id }).sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      notes: notes
+    });
+  } catch (error) {
+    console.error('Error fetching notes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch notes'
+    });
+  }
+});
+
+// Create a new note
+app.post('/api/notes', async (req, res) => {
+  try {
+    const { title, content, email } = req.body;
+    
+    if (!title || !content || !email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title, content, and email are required'
+      });
+    }
+    
+    // Find user by email first
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    const note = new Note({
+      title,
+      content,
+      userId: user._id
+    });
+    
+    await note.save();
+    
+    res.json({
+      success: true,
+      message: 'Note created successfully',
+      note: note
+    });
+  } catch (error) {
+    console.error('Error creating note:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create note'
+    });
+  }
+});
+
+// Update a note
+app.put('/api/notes/:noteId', async (req, res) => {
+  try {
+    const { noteId } = req.params;
+    const { title, content } = req.body;
+    
+    if (!title || !content) {
+      return res.status(400).json({
+        success: false,
+        message: 'Title and content are required'
+      });
+    }
+    
+    const note = await Note.findByIdAndUpdate(
+      noteId,
+      { title, content, updatedAt: Date.now() },
+      { new: true }
+    );
+    
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: 'Note not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Note updated successfully',
+      note: note
+    });
+  } catch (error) {
+    console.error('Error updating note:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update note'
+    });
+  }
+});
+
+// Delete a note
+app.delete('/api/notes/:noteId', async (req, res) => {
+  try {
+    const { noteId } = req.params;
+    
+    const note = await Note.findByIdAndDelete(noteId);
+    
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: 'Note not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Note deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting note:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete note'
+    });
+  }
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
