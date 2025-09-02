@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FiEye, FiEyeOff, FiUser, FiCalendar, FiMail } from 'react-icons/fi';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Signup: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -8,6 +8,7 @@ const Signup: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [otpId, setOtpId] = useState('');
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     dateOfBirth: '',
@@ -88,11 +89,17 @@ const Signup: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        setMessage('Account created successfully! You can now sign in.');
+        setMessage('Account created successfully! Redirecting to dashboard...');
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify(data.user));
         // Reset form
         setFormData({ name: '', dateOfBirth: '', email: '', otp: '' });
         setShowOTP(false);
         setOtpId('');
+        // Redirect to dashboard after 2 seconds
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
       } else {
         setMessage(data.message || 'Invalid OTP');
       }
@@ -163,13 +170,14 @@ const Signup: React.FC = () => {
                     <FiCalendar className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    type="text"
+                    type="date"
                     id="dateOfBirth"
                     name="dateOfBirth"
                     value={formData.dateOfBirth}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-3 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
-                    placeholder="11 December 1997"
+                    className="w-full pl-10 pr-3 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white text-gray-700"
+                    max="2010-12-31"
+                    min="1900-01-01"
                   />
                   <label htmlFor="dateOfBirth" className="absolute -top-2 left-3 bg-white px-1 text-sm font-medium text-gray-500 peer-focus:text-blue-600">
                     Date of Birth

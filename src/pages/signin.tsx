@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FiEye, FiEyeOff, FiMail, FiLock } from 'react-icons/fi';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Signin: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -8,6 +8,7 @@ const Signin: React.FC = () => {
   const [message, setMessage] = useState('');
   const [otpId, setOtpId] = useState('');
   const [showOTP, setShowOTP] = useState(false);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -83,11 +84,17 @@ const Signin: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        setMessage('Sign in successful! Welcome back.');
+        setMessage('Sign in successful! Redirecting to dashboard...');
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify(data.user));
         // Reset form
         setFormData({ email: '', password: '' });
         setShowOTP(false);
         setOtpId('');
+        // Redirect to dashboard after 2 seconds
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
       } else {
         setMessage(data.message || 'Invalid OTP');
       }
