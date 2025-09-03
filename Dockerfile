@@ -20,7 +20,8 @@ COPY . .
 # Debug: List files to verify they're copied
 RUN echo "=== Root directory ===" && ls -la
 RUN echo "=== Client directory ===" && ls -la client/
-RUN echo "=== Client public directory ===" && ls -la client/public/
+RUN echo "=== Client public directory ===" && ls -la client/public/ || echo "client/public not found"
+RUN echo "=== All client subdirectories ===" && find client/ -type d -name "*" 2>/dev/null || echo "No client subdirectories found"
 
 # Build the client
 RUN cd client && npm run build

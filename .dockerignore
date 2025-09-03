@@ -1,11 +1,7 @@
+# Only exclude what we really don't need
 node_modules
-client/node_modules
-server/node_modules
 build
-client/build
 .git
-.gitignore
-README.md
 .env
 .env.local
 .env.development.local
