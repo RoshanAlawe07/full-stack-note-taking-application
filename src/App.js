@@ -26,10 +26,11 @@ const App = () => {
   }, []);
 
   const Dashboard = () => {
-    const [notes, setNotes] = useState([]);
-    const [showAddNote, setShowAddNote] = useState(false);
-    const [newNote, setNewNote] = useState({ title: '', content: '' });
-    const [editingNote, setEditingNote] = useState(null);
+      const [notes, setNotes] = useState([]);
+  const [showAddNote, setShowAddNote] = useState(false);
+  const [newNote, setNewNote] = useState({ title: '', content: '' });
+  const [editingNote, setEditingNote] = useState(null);
+  const [loading, setLoading] = useState(false);
   
 
     useEffect(() => {
