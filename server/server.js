@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const nodemailer = require('nodemailer');
 const { v4: uuidv4 } = require('uuid');
 const mongoose = require('mongoose');
@@ -51,6 +52,9 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// Serve static files from the React app build directory
+app.use(express.static(path.join(__dirname, '../build')));
 
 // Import models
 const User = require('./models/User');
@@ -604,6 +608,11 @@ app.delete('/api/notes/:noteId', authenticateToken, async (req, res) => {
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'Server is running!' });
+});
+
+// Catch-all handler: send back React's index.html file for any non-API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
 });
 
 // Start server only after database connection
