@@ -16,7 +16,7 @@
 2. Click "New" → "Web Service"
 3. Connect your GitHub repository
 4. Configure:
-   - **Name**: `note-taking-backend`
+   - **Name**: `full-stack-note-taking-application`
    - **Environment**: `Node`
    - **Build Command**: `cd server && npm install`
    - **Start Command**: `cd server && npm start`
@@ -46,12 +46,12 @@ FRONTEND_URL=https://your-frontend-url.onrender.com
 
 ### 4. Environment Variables for Frontend
 ```
-REACT_APP_API_URL=https://your-backend-url.onrender.com
+REACT_APP_API_URL=https://full-stack-note-taking-application.onrender.com
 ```
 
 ## URLs
-- **Backend API**: `https://note-taking-backend.onrender.com`
-- **Frontend**: `https://note-taking-frontend.onrender.com`
+- **Backend API**: `https://full-stack-note-taking-application.onrender.com`
+- **Frontend**: `https://your-frontend-url.onrender.com`
 
 ## Testing
 1. Deploy backend first
