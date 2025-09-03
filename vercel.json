@@ -18,5 +18,7 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ]
+  ],
+  "installCommand": "npm install --legacy-peer-deps --force",
+  "buildCommand": "npm run build"
 }
