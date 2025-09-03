@@ -20,5 +20,6 @@
     }
   ],
   "installCommand": "npm install --legacy-peer-deps --force",
-  "buildCommand": "npm run build"
+  "buildCommand": "npm run build",
+  "framework": "create-react-app"
 }
