@@ -1,13 +1,17 @@
-# Render Deployment Guide
+# Deployment Guide (Render + Railway)
 
 ## Project Structure
 ```
 / (root)
-├── client/           # React frontend
-├── server/           # Express backend
+├── client/           # React frontend (Railway)
+├── server/           # Express backend (Render)
 ├── render.yaml       # Render configuration
 └── package.json      # Root package
 ```
+
+## Deployment Architecture
+- **Backend**: Deployed on Render
+- **Frontend**: Deployed on Railway
 
 ## Deployment Steps
 
@@ -35,27 +39,35 @@ PORT=10000
 FRONTEND_URL=https://your-frontend-url.onrender.com
 ```
 
-### 3. Frontend Service (Static Site)
-1. Click "New" → "Static Site"
-2. Connect your GitHub repository
-3. Configure:
+### 3. Frontend Service (Railway)
+1. Go to [Railway Dashboard](https://railway.app)
+2. Click "New Project" → "Deploy from GitHub repo"
+3. Select your repository
+4. Choose the `client` folder
+5. Configure:
    - **Name**: `note-taking-frontend`
-   - **Build Command**: `cd client && npm install && npm run build`
-   - **Publish Directory**: `client/build`
+   - **Environment**: `Node.js`
    - **Plan**: Free
 
-### 4. Environment Variables for Frontend
+### 4. Environment Variables for Frontend (Railway)
 ```
 REACT_APP_API_URL=https://full-stack-note-taking-application.onrender.com
 ```
 
 ## URLs
-- **Backend API**: `https://full-stack-note-taking-application.onrender.com`
-- **Frontend**: `https://your-frontend-url.onrender.com`
+- **Backend API**: `https://full-stack-note-taking-application.onrender.com` (Render)
+- **Frontend**: `https://your-frontend-url.railway.app` (Railway)
 
 ## Testing
-1. Deploy backend first
-2. Get backend URL
-3. Set `REACT_APP_API_URL` in frontend
-4. Deploy frontend
-5. Test OTP functionality
+1. Deploy backend on Render first
+2. Get backend URL: `https://full-stack-note-taking-application.onrender.com`
+3. Deploy frontend on Railway
+4. Set `REACT_APP_API_URL=https://full-stack-note-taking-application.onrender.com` in Railway
+5. Update backend CORS with your Railway frontend URL
+6. Test OTP functionality
+
+## CORS Configuration
+After getting your Railway frontend URL, update the backend environment variable:
+```
+FRONTEND_URL=https://your-frontend-url.railway.app
+```

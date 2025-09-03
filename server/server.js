@@ -47,8 +47,8 @@ const connectDB = async () => {
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL] 
-    : ['http://localhost:3000'],
+    ? [process.env.FRONTEND_URL, 'https://your-frontend-url.railway.app'] 
+    : ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true
 }));
 app.use(express.json());
