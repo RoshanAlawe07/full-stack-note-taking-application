@@ -33,7 +33,7 @@ const Signup = ({ setCurrentPage, setUserData }) => {
     setMessage('');
 
     try {
-      const response = await fetch('API_ENDPOINTS.SEND_OTP', {
+      const response = await fetch(API_ENDPOINTS.SEND_OTP, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ const Signup = ({ setCurrentPage, setUserData }) => {
     setMessage('');
 
     try {
-      const response = await fetch('API_ENDPOINTS.VERIFY_OTP', {
+      const response = await fetch(API_ENDPOINTS.VERIFY_OTP, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

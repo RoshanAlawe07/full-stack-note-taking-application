@@ -30,7 +30,7 @@ const App = () => {
     const [showAddNote, setShowAddNote] = useState(false);
     const [newNote, setNewNote] = useState({ title: '', content: '' });
     const [editingNote, setEditingNote] = useState(null);
-    const [loading, setLoading] = useState(false);
+  
 
     useEffect(() => {
       loadNotes();
@@ -39,7 +39,7 @@ const App = () => {
     const loadNotes = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('API_ENDPOINTS.NOTES', {
+        const response = await fetch(API_ENDPOINTS.NOTES, {
           method: 'GET',
           headers: { 
             'Content-Type': 'application/json',
@@ -66,7 +66,7 @@ const App = () => {
         setLoading(true);
         try {
           const token = localStorage.getItem('token');
-          const response = await fetch('API_ENDPOINTS.NOTES', {
+          const response = await fetch(API_ENDPOINTS.NOTES, {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ const App = () => {
         setLoading(true);
         try {
           const token = localStorage.getItem('token');
-          const response = await fetch(`API_ENDPOINTS.NOTES/${editingNote.id}`, {
+          const response = await fetch(`${API_ENDPOINTS.NOTES}/${editingNote.id}`, {
             method: 'PUT',
             headers: { 
               'Content-Type': 'application/json',
@@ -148,7 +148,7 @@ const App = () => {
     const handleDeleteNote = async (id) => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`API_ENDPOINTS.NOTES/${id}`, {
+        const response = await fetch(`${API_ENDPOINTS.NOTES}/${id}`, {
           method: 'DELETE',
           headers: { 
             'Content-Type': 'application/json',

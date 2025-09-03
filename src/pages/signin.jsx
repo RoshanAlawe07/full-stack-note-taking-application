@@ -30,7 +30,7 @@ const Signin = ({ setCurrentPage, setUserData }) => {
     setMessage('');
 
     try {
-      const response = await fetch('API_ENDPOINTS.SIGNIN_OTP', {
+      const response = await fetch(API_ENDPOINTS.SIGNIN_OTP, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -69,7 +69,7 @@ const Signin = ({ setCurrentPage, setUserData }) => {
     setMessage('');
 
     try {
-      const response = await fetch('API_ENDPOINTS.VERIFY_SIGNIN', {
+      const response = await fetch(API_ENDPOINTS.VERIFY_SIGNIN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
