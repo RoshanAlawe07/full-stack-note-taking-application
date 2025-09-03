@@ -10,68 +10,48 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Debug: Check if JWT_SECRET is loaded
-console.log('JWT_SECRET loaded:', !!process.env.JWT_SECRET);
-console.log('JWT_SECRET length:', process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0);
-
-// Ensure JWT_SECRET is available
 if (!process.env.JWT_SECRET) {
-  console.log('JWT_SECRET not found in environment, using fallback');
   process.env.JWT_SECRET = 'fallback-jwt-secret-for-development-only';
 }
 
-// MongoDB Connection with better error handling
 const connectDB = async () => {
   try {
     const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/notes-app';
-    console.log('Attempting to connect to MongoDB...');
-    console.log('Connection string:', mongoURI.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
-    
     await mongoose.connect(mongoURI, {
-      serverSelectionTimeoutMS: 5000 // Timeout after 5s instead of 30s
+      serverSelectionTimeoutMS: 5000
     });
-    
-    console.log('✅ MongoDB connected successfully');
+    console.log('MongoDB connected successfully');
   } catch (err) {
-    console.error('❌ MongoDB connection error:', err.message);
-    console.error('Please check:');
-    console.error('1. MongoDB is installed and running');
-    console.error('2. Connection string in .env file is correct');
-    console.error('3. Network connectivity');
-    process.exit(1); // Exit the process if DB connection fails
+    console.error('MongoDB connection error:', err.message);
+    process.exit(1);
   }
 };
 
-// Database connection will be handled in startServer()
 
-// Middleware
 app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://localhost:3001',
     'https://full-stack-note-taking-application-production.up.railway.app',
     process.env.FRONTEND_URL
-  ].filter(Boolean), // Remove any undefined values
+  ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
-// Static file serving removed for Render deployment
-// Frontend will be served separately by Render
 
-// Import models
 const User = require('./models/User');
 const Note = require('./models/Note');
 
-// Store OTPs temporarily (in production, use Redis or database)
+
 const otpStore = new Map();
 
-// JWT Authentication Middleware
+
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
     return res.status(401).json({ 
@@ -92,7 +72,7 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Email transporter configuration
+
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
   port: process.env.EMAIL_PORT || 587,
@@ -103,12 +83,12 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Generate 6-digit OTP
+
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Send OTP email
+
 async function sendOTPEmail(email, otp, name) {
   const mailOptions = {
     from: process.env.EMAIL_USER,
@@ -139,14 +119,12 @@ async function sendOTPEmail(email, otp, name) {
   }
 }
 
-// API Routes
 
-// Send OTP for signup
 app.post('/api/send-otp', async (req, res) => {
   try {
     const { email, name, dateOfBirth } = req.body;
 
-    // Validate required fields
+
     if (!email || !name) {
       return res.status(400).json({ 
         success: false, 
@@ -154,28 +132,28 @@ app.post('/api/send-otp', async (req, res) => {
       });
     }
 
-    // Generate OTP
+
     const otp = generateOTP();
     const otpId = uuidv4();
 
-    // Store OTP with expiration (10 minutes)
+
     otpStore.set(otpId, {
       otp,
       email,
       name,
       dateOfBirth,
       createdAt: Date.now(),
-      expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
+      expiresAt: Date.now() + (10 * 60 * 1000)
     });
 
-    // Send OTP email
+    
     const emailSent = await sendOTPEmail(email, otp, name);
 
     if (emailSent) {
       res.json({
         success: true,
         message: 'OTP sent successfully to your email',
-        otpId: otpId // Return OTP ID for verification
+        otpId: otpId
       });
     } else {
       res.status(500).json({
@@ -192,7 +170,7 @@ app.post('/api/send-otp', async (req, res) => {
   }
 });
 
-// Verify OTP and signup
+
 app.post('/api/verify-otp', async (req, res) => {
   try {
     const { otpId, otp } = req.body;
@@ -204,7 +182,7 @@ app.post('/api/verify-otp', async (req, res) => {
       });
     }
 
-    // Get stored OTP data
+
     const otpData = otpStore.get(otpId);
 
     if (!otpData) {
@@ -214,7 +192,7 @@ app.post('/api/verify-otp', async (req, res) => {
       });
     }
 
-    // Check if OTP is expired
+
     if (Date.now() > otpData.expiresAt) {
       otpStore.delete(otpId);
       return res.status(400).json({
@@ -223,7 +201,7 @@ app.post('/api/verify-otp', async (req, res) => {
       });
     }
 
-    // Verify OTP
+
     if (otpData.otp !== otp) {
       return res.status(400).json({
         success: false,
@@ -231,10 +209,10 @@ app.post('/api/verify-otp', async (req, res) => {
       });
     }
 
-    // OTP is valid - remove from store
+
     otpStore.delete(otpId);
 
-    // Save user to database
+
     try {
       const user = new User({
         name: otpData.name,
@@ -244,29 +222,14 @@ app.post('/api/verify-otp', async (req, res) => {
 
       await user.save();
 
-      // Generate JWT token
-      console.log('Generating JWT token for new user:', user.email);
-      console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
-      
-      let token;
-      try {
-        token = jwt.sign(
-          { 
-            userId: user._id, 
-            email: user.email 
-          },
-          process.env.JWT_SECRET,
-          { expiresIn: '24h' }
-        );
-        console.log('JWT token generated successfully for signup');
-      } catch (jwtError) {
-        console.error('JWT token generation failed:', jwtError);
-        console.error('JWT_SECRET at time of error:', !!process.env.JWT_SECRET);
-        return res.status(500).json({
-          success: false,
-          message: 'Failed to generate authentication token: ' + jwtError.message
-        });
-      }
+      const token = jwt.sign(
+        { 
+          userId: user._id, 
+          email: user.email 
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+      );
 
       res.json({
         success: true,
@@ -303,7 +266,7 @@ app.post('/api/verify-otp', async (req, res) => {
   }
 });
 
-// Send OTP for signin
+
 app.post('/api/signin-otp', async (req, res) => {
   try {
     const { email } = req.body;
@@ -315,23 +278,21 @@ app.post('/api/signin-otp', async (req, res) => {
       });
     }
 
-    // Generate OTP
+
     const otp = generateOTP();
     const otpId = uuidv4();
 
-    // Store OTP with expiration (10 minutes)
+
     const otpData = {
       otp,
       email,
       type: 'signin',
       createdAt: Date.now(),
-      expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
+      expiresAt: Date.now() + (10 * 60 * 1000)
     };
     otpStore.set(otpId, otpData);
-    console.log('OTP stored for signin:', { otpId, email, otp, type: 'signin' });
-    console.log('Total OTPs in store:', otpStore.size);
 
-    // Send OTP email
+    
     const emailSent = await sendOTPEmail(email, otp, 'User');
 
     if (emailSent) {
@@ -355,27 +316,21 @@ app.post('/api/signin-otp', async (req, res) => {
   }
 });
 
-// Verify OTP for signin
+
 app.post('/api/verify-signin', async (req, res) => {
   try {
     const { otpId, otp } = req.body;
-    console.log('Verify signin request:', { otpId, otp });
-
     if (!otpId || !otp) {
-      console.log('Missing OTP ID or OTP');
       return res.status(400).json({
         success: false,
         message: 'OTP ID and OTP are required'
       });
     }
 
-    // Get stored OTP data
+
     const otpData = otpStore.get(otpId);
-    console.log('Stored OTP data:', otpData);
-    console.log('All stored OTPs:', Array.from(otpStore.entries()));
 
     if (!otpData) {
-      console.log('No OTP data found for ID:', otpId);
       return res.status(400).json({
         success: false,
         message: 'OTP not found. Please request a new OTP.'
@@ -383,14 +338,13 @@ app.post('/api/verify-signin', async (req, res) => {
     }
 
     if (otpData.type !== 'signin') {
-      console.log('Wrong OTP type:', otpData.type, 'expected: signin');
       return res.status(400).json({
         success: false,
         message: 'Invalid OTP type'
       });
     }
 
-    // Check if OTP is expired
+
     if (Date.now() > otpData.expiresAt) {
       otpStore.delete(otpId);
       return res.status(400).json({
@@ -399,7 +353,7 @@ app.post('/api/verify-signin', async (req, res) => {
       });
     }
 
-    // Verify OTP
+
     if (otpData.otp !== otp) {
       return res.status(400).json({
         success: false,
@@ -407,10 +361,10 @@ app.post('/api/verify-signin', async (req, res) => {
       });
     }
 
-    // OTP is valid - remove from store
+
     otpStore.delete(otpId);
 
-    // Find user in database
+
     try {
       const user = await User.findOne({ email: otpData.email });
       
@@ -421,29 +375,14 @@ app.post('/api/verify-signin', async (req, res) => {
         });
       }
 
-      // Generate JWT token
-      console.log('Generating JWT token for user:', user.email);
-      console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
-      
-      let token;
-      try {
-        token = jwt.sign(
-          { 
-            userId: user._id, 
-            email: user.email 
-          },
-          process.env.JWT_SECRET,
-          { expiresIn: '24h' }
-        );
-        console.log('JWT token generated successfully');
-      } catch (jwtError) {
-        console.error('JWT token generation failed:', jwtError);
-        console.error('JWT_SECRET at time of error:', !!process.env.JWT_SECRET);
-        return res.status(500).json({
-          success: false,
-          message: 'Failed to generate authentication token: ' + jwtError.message
-        });
-      }
+      const token = jwt.sign(
+        { 
+          userId: user._id, 
+          email: user.email 
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+      );
 
       res.json({
         success: true,
@@ -473,7 +412,7 @@ app.post('/api/verify-signin', async (req, res) => {
   }
 });
 
-// Clean up expired OTPs every 5 minutes
+
 setInterval(() => {
   const now = Date.now();
   for (const [otpId, otpData] of otpStore.entries()) {
@@ -483,9 +422,7 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
-// Note Management Endpoints
 
-// Get all notes for a user
 app.get('/api/notes', authenticateToken, async (req, res) => {
   try {
     const notes = await Note.find({ userId: req.user.userId }).sort({ createdAt: -1 });
@@ -503,7 +440,7 @@ app.get('/api/notes', authenticateToken, async (req, res) => {
   }
 });
 
-// Create a new note
+
 app.post('/api/notes', authenticateToken, async (req, res) => {
   try {
     const { title, content } = req.body;
@@ -537,7 +474,7 @@ app.post('/api/notes', authenticateToken, async (req, res) => {
   }
 });
 
-// Update a note
+
 app.put('/api/notes/:noteId', authenticateToken, async (req, res) => {
   try {
     const { noteId } = req.params;
@@ -550,7 +487,7 @@ app.put('/api/notes/:noteId', authenticateToken, async (req, res) => {
       });
     }
     
-    // Check if note belongs to the authenticated user
+
     const note = await Note.findOne({ _id: noteId, userId: req.user.userId });
     
     if (!note) {
@@ -580,12 +517,12 @@ app.put('/api/notes/:noteId', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete a note
+
 app.delete('/api/notes/:noteId', authenticateToken, async (req, res) => {
   try {
     const { noteId } = req.params;
     
-    // Check if note belongs to the authenticated user
+
     const note = await Note.findOne({ _id: noteId, userId: req.user.userId });
     
     if (!note) {
@@ -610,21 +547,17 @@ app.delete('/api/notes/:noteId', authenticateToken, async (req, res) => {
   }
 });
 
-// Health check endpoint
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'Server is running!' });
 });
 
-// Catch-all handler removed for Render deployment
-// Frontend will be served separately by Render
 
-// Start server only after database connection
 const startServer = async () => {
   try {
-    await connectDB(); // Ensure DB connection before starting server
+    await connectDB();
     app.listen(PORT, () => {
-      console.log(`🚀 Server is running on port ${PORT}`);
-      console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`Server is running on port ${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

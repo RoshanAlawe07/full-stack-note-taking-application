@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { API_ENDPOINTS } from '../config';
 
-// Signin component props: setCurrentPage, setUserData
+
 
 const Signin = ({ setCurrentPage, setUserData }) => {
   const [loading, setLoading] = useState(false);
@@ -30,7 +30,7 @@ const Signin = ({ setCurrentPage, setUserData }) => {
     setMessage('');
 
     try {
-      console.log('Sending OTP request to:', API_ENDPOINTS.SIGNIN_OTP);
+
       const response = await fetch(API_ENDPOINTS.SIGNIN_OTP, {
         method: 'POST',
         headers: {
@@ -41,8 +41,7 @@ const Signin = ({ setCurrentPage, setUserData }) => {
         }),
       });
       
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
+
 
       const data = await response.json();
 

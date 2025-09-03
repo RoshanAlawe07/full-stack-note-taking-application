@@ -7,7 +7,7 @@ const App = () => {
   const [currentPage, setCurrentPage] = useState('signup');
   const [userData, setUserData] = useState(null);
 
-  // Check for existing authentication on app load
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
@@ -18,7 +18,7 @@ const App = () => {
         setUserData(user);
         setCurrentPage('dashboard');
       } catch (error) {
-        // Invalid stored data, clear it
+
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }
@@ -50,7 +50,6 @@ const App = () => {
         if (data.success) {
           setNotes(data.notes || []);
         } else if (response.status === 401 || response.status === 403) {
-          // Token expired or invalid, redirect to signin
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           setCurrentPage('signin');

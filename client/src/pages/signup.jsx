@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { API_ENDPOINTS } from '../config';
 
-// Signup component props: setCurrentPage, setUserData
+
 
 const Signup = ({ setCurrentPage, setUserData }) => {
   const [showOTP, setShowOTP] = useState(false);
@@ -23,7 +23,7 @@ const Signup = ({ setCurrentPage, setUserData }) => {
   };
 
   const handleGetOTP = async () => {
-    // Validate required fields
+
     if (!formData.name || !formData.email) {
       setMessage('Please fill in your name and email');
       return;
