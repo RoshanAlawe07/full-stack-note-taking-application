@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node server/server.js",
-    "build": "echo 'Build handled by Dockerfile'",
+    "build": "cd client && npm install && npm run build",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd server && nodemon server.js",
     "client": "cd client && npm start"

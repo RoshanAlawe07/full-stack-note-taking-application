@@ -47,14 +47,14 @@ const connectDB = async () => {
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL, 'https://your-frontend.railway.app'] 
+    ? [process.env.FRONTEND_URL] 
     : ['http://localhost:3000'],
   credentials: true
 }));
 app.use(express.json());
 
-// Serve static files from the React app build directory
-app.use(express.static(path.join(__dirname, '../build')));
+// Static file serving removed for Render deployment
+// Frontend will be served separately by Render
 
 // Import models
 const User = require('./models/User');
@@ -610,10 +610,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'Server is running!' });
 });
 
-// Catch-all handler: send back React's index.html file for any non-API routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../build', 'index.html'));
-});
+// Catch-all handler removed for Render deployment
+// Frontend will be served separately by Render
 
 // Start server only after database connection
 const startServer = async () => {
