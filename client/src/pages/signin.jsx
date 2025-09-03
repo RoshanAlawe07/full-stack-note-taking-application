@@ -30,6 +30,7 @@ const Signin = ({ setCurrentPage, setUserData }) => {
     setMessage('');
 
     try {
+      console.log('Sending OTP request to:', API_ENDPOINTS.SIGNIN_OTP);
       const response = await fetch(API_ENDPOINTS.SIGNIN_OTP, {
         method: 'POST',
         headers: {
@@ -39,6 +40,9 @@ const Signin = ({ setCurrentPage, setUserData }) => {
           email: formData.email
         }),
       });
+      
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
 
       const data = await response.json();
 
@@ -50,8 +54,12 @@ const Signin = ({ setCurrentPage, setUserData }) => {
         setMessage(data.message || 'Failed to send OTP');
       }
     } catch (error) {
-      setMessage('Network error. Please try again.');
       console.error('Error sending OTP:', error);
+      if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+        setMessage('Cannot connect to server. Please check if the backend is running.');
+      } else {
+        setMessage('Network error. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
