@@ -30,7 +30,6 @@ const App = () => {
   const [showAddNote, setShowAddNote] = useState(false);
   const [newNote, setNewNote] = useState({ title: '', content: '' });
   const [editingNote, setEditingNote] = useState(null);
-  const [loading, setLoading] = useState(false);
   
 
     useEffect(() => {
@@ -64,7 +63,6 @@ const App = () => {
 
     const handleAddNote = async () => {
       if (newNote.title.trim() && newNote.content.trim()) {
-        setLoading(true);
         try {
           const token = localStorage.getItem('token');
           const response = await fetch(API_ENDPOINTS.NOTES, {
@@ -91,8 +89,6 @@ const App = () => {
           }
         } catch (error) {
           console.error('Error adding note:', error);
-        } finally {
-          setLoading(false);
         }
       }
     };
@@ -108,7 +104,6 @@ const App = () => {
 
     const handleUpdateNote = async () => {
       if (editingNote && newNote.title.trim() && newNote.content.trim()) {
-        setLoading(true);
         try {
           const token = localStorage.getItem('token');
           const response = await fetch(`${API_ENDPOINTS.NOTES}/${editingNote.id}`, {
@@ -140,8 +135,6 @@ const App = () => {
           }
         } catch (error) {
           console.error('Error updating note:', error);
-        } finally {
-          setLoading(false);
         }
       }
     };

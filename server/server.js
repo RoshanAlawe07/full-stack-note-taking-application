@@ -44,7 +44,12 @@ const connectDB = async () => {
 // Database connection will be handled in startServer()
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL, 'https://your-frontend.railway.app'] 
+    : ['http://localhost:3000'],
+  credentials: true
+}));
 app.use(express.json());
 
 // Import models
