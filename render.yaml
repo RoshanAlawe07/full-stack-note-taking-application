@@ -29,8 +29,18 @@ services:
     name: note-taking-frontend
     env: static
     plan: free
-    buildCommand: cd client && npm install && npm run build
-    staticPublishPath: ./client/build
+    buildCommand: |
+      echo "Current directory: $(pwd)"
+      echo "Listing root directory:"
+      ls -la
+      echo "Listing client directory:"
+      ls -la client/
+      echo "Listing client/public directory:"
+      ls -la client/public/
+      cd client
+      npm install
+      npm run build
+    staticPublishPath: client/build
     envVars:
       - key: REACT_APP_API_URL
         sync: false
