@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { API_ENDPOINTS } from '../config';
 
-interface SigninProps {
-  setCurrentPage: (page: string) => void;
-  setUserData: (user: any) => void;
-}
+// Signup component props: setCurrentPage, setUserData
 
-const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
+const Signup = ({ setCurrentPage, setUserData }) => {
+  const [showOTP, setShowOTP] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [otpId, setOtpId] = useState('');
-  const [showOTP, setShowOTP] = useState(false);
   const [formData, setFormData] = useState({
+    name: '',
+    dateOfBirth: '',
     email: '',
     otp: ''
   });
@@ -24,8 +23,9 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
   };
 
   const handleGetOTP = async () => {
-    if (!formData.email) {
-      setMessage('Please enter your email');
+    // Validate required fields
+    if (!formData.name || !formData.email) {
+      setMessage('Please fill in your name and email');
       return;
     }
 
@@ -33,13 +33,15 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
     setMessage('');
 
     try {
-      const response = await fetch('API_ENDPOINTS.SIGNIN_OTP', {
+      const response = await fetch('API_ENDPOINTS.SEND_OTP', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: formData.email
+          name: formData.name,
+          email: formData.email,
+          dateOfBirth: formData.dateOfBirth
         }),
       });
 
@@ -72,7 +74,7 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
     setMessage('');
 
     try {
-      const response = await fetch('API_ENDPOINTS.VERIFY_SIGNIN', {
+      const response = await fetch('API_ENDPOINTS.VERIFY_OTP', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,26 +86,28 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
       });
 
       const data = await response.json();
-      console.log('Signin response:', data);
+      console.log('Signup response:', data);
       console.log('Response status:', response.status);
 
       if (data.success) {
-        setMessage('Sign in successful! Redirecting to dashboard...');
+        setMessage('Account created successfully! Welcome to HD!');
         // Store JWT token and user data in localStorage
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         setUserData(data.user);
         // Reset form
-        setFormData({ email: '', otp: '' });
+        setFormData({ name: '', dateOfBirth: '', email: '', otp: '' });
         setShowOTP(false);
         setOtpId('');
-        // Redirect to dashboard after 2 seconds
+        // Show success message and redirect to dashboard
         setTimeout(() => {
-          setCurrentPage('dashboard');
-          setMessage('');
+          setMessage('Redirecting to your dashboard...');
+          setTimeout(() => {
+            setCurrentPage('dashboard');
+            setMessage('');
+          }, 1500);
         }, 2000);
       } else {
-        console.log('Signin failed:', data);
         setMessage(data.message || 'Invalid OTP');
       }
     } catch (error) {
@@ -128,23 +132,58 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
         <div className="max-w-sm w-full space-y-8">
           {/* Desktop Title */}
           <div className="text-left mt-16 hidden md:block">
-            <h2 className="text-3xl font-bold text-gray-900">Sign in</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Sign up</h2>
             <p className="mt-2 text-sm text-gray-600">
-              Please login to continue to your account.
+              Sign up to enjoy the feature of HD.
             </p>
           </div>
 
           {/* Mobile Title */}
           <div className="text-center mt-8 md:hidden">
             <img src="/logo.png" alt="HD Logo" className="h-8 w-16 mx-auto mb-4" />
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign in</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign up</h2>
             <p className="text-sm text-gray-600">
-              Please login to continue to your account.
+              Sign up to enjoy the feature of HD.
             </p>
           </div>
 
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
+              <div className="relative">
+                <div className="relative">
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
+                    placeholder="Jonas Khanwald"
+                  />
+                  <label htmlFor="name" className="absolute -top-2 left-3 bg-white px-1 text-sm font-medium text-gray-500 peer-focus:text-blue-600">
+                    Your Name
+                  </label>
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="relative">
+                  <input
+                    type="date"
+                    id="dateOfBirth"
+                    name="dateOfBirth"
+                    value={formData.dateOfBirth}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white text-gray-700"
+                    max="2010-12-31"
+                    min="1900-01-01"
+                  />
+                  <label htmlFor="dateOfBirth" className="absolute -top-2 left-3 bg-white px-1 text-sm font-medium text-gray-500 peer-focus:text-blue-600">
+                    Date of Birth
+                  </label>
+                </div>
+              </div>
+
               <div className="relative">
                 <div className="relative">
                   <input
@@ -164,18 +203,18 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
 
               {showOTP && (
                 <div className="relative">
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-500 mb-1">
+                  <label htmlFor="otp" className="block text-sm font-medium text-gray-500 mb-1">
                     OTP
                   </label>
                   <div className="relative">
                     <input
                       type="text"
-                      id="password"
+                      id="otp"
                       name="otp"
+                      placeholder="OTP"
                       value={formData.otp}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all duration-200 bg-white"
-                      placeholder="Enter OTP"
                     />
                   </div>
                   <div className="mt-2 text-right">
@@ -189,32 +228,6 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Mobile-specific elements */}
-            <div className="md:hidden space-y-4">
-              {showOTP && (
-                <div className="text-left">
-                  <button 
-                    type="button"
-                    onClick={handleGetOTP}
-                    className="text-sm text-blue-600 hover:text-blue-500 transition-colors duration-200"
-                  >
-                    Resend OTP
-                  </button>
-                </div>
-              )}
-              
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="keepLoggedIn"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="keepLoggedIn" className="ml-2 block text-sm text-gray-700">
-                  Keep me logged in
-                </label>
-              </div>
             </div>
 
             {/* Message Display */}
@@ -240,18 +253,18 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
                   {showOTP ? 'Verifying...' : 'Sending OTP...'}
                 </div>
               ) : (
-                showOTP ? 'Sign in' : 'Get OTP'
+                showOTP ? 'Sign up' : 'Get OTP'
               )}
             </button>
 
             <div className="text-center">
               <p className="text-sm text-gray-600">
-                Need an account?{' '}
+                Already have an account?{' '}
                 <span 
                   className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200 cursor-pointer"
-                  onClick={() => setCurrentPage('signup')}
+                  onClick={() => setCurrentPage('signin')}
                 >
-                  Create one
+                  Sign in
                 </span>
               </p>
             </div>
@@ -283,4 +296,4 @@ const Signin: React.FC<SigninProps> = ({ setCurrentPage, setUserData }) => {
   );
 };
 
-export default Signin;
+export default Signup;

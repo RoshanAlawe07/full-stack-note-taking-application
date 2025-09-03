@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Signup from './pages/signup.tsx';
-import Signin from './pages/signin.tsx';
+import Signup from './pages/signup.jsx';
+import Signin from './pages/signin.jsx';
 import { API_ENDPOINTS } from './config';
 
 const App = () => {
