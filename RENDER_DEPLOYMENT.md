@@ -56,7 +56,7 @@ REACT_APP_API_URL=https://full-stack-note-taking-application.onrender.com
 
 ## URLs
 - **Backend API**: `https://full-stack-note-taking-application.onrender.com` (Render)
-- **Frontend**: `https://your-frontend-url.railway.app` (Railway)
+- **Frontend**: `https://full-stack-note-taking-application-production.up.railway.app` (Railway)
 
 ## Testing
 1. Deploy backend on Render first
@@ -67,7 +67,7 @@ REACT_APP_API_URL=https://full-stack-note-taking-application.onrender.com
 6. Test OTP functionality
 
 ## CORS Configuration
-After getting your Railway frontend URL, update the backend environment variable:
+Update the backend environment variable in Render:
 ```
-FRONTEND_URL=https://your-frontend-url.railway.app
+FRONTEND_URL=https://full-stack-note-taking-application-production.up.railway.app
 ```
