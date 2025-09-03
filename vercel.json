@@ -19,7 +19,7 @@
       "dest": "/index.html"
     }
   ],
-  "installCommand": "npm install --legacy-peer-deps --force",
+  "installCommand": "npm install --legacy-peer-deps",
   "buildCommand": "npm run build",
   "framework": "create-react-app"
 }
